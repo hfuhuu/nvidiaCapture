@@ -67,7 +67,7 @@ On success, `capture.png` is saved in the working directory containing the real 
 
 ### Blocked capture (cheat interference detected)
 
-When cheat software intercepts the capture at the driver level:
+When cheat software intercepts the capture:
 
 ```
   ##############################################################
