@@ -345,6 +345,7 @@ int main()
         case -9:   detail = "NVAPI_INCOMPATIBLE_STRUCT_VERSION"; break;
         case -101: detail = "NVAPI_EXPECTED_PHYSICAL_GPU_HANDLE"; break;
         case -102: detail = "NVAPI_EXPECTED_DISPLAY_HANDLE - targetId invalid"; break;
+        case -137: detail = "NVAPI_INVALID_USER_PRIVILEDGE - run as Administrator or use queueIndex=14"; break;
         default:   detail = "Unknown NVAPI error"; break;
         }
         PrintCheatWarning("NvAPI_D3D11_WksReadScanout failed: " + detail, status);
