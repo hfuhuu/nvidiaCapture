@@ -95,6 +95,7 @@ When cheat software intercepts the capture:
 | `0xfffffff7` | `-9` | `NVAPI_INCOMPATIBLE_STRUCT_VERSION` — wrong version field in params |
 | `0xffffff9b` | `-101` | `NVAPI_EXPECTED_PHYSICAL_GPU_HANDLE` — invalid GPU handle in params |
 | `0xffffff9a` | `-102` | `NVAPI_EXPECTED_DISPLAY_HANDLE` — `targetId` is zero or invalid |
+| `0xffffff77` | `-137` | `NVAPI_INVALID_USER_PRIVILEDGE` — not running as admin |
 
 ## Queue Index Options
 
